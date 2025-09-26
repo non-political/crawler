@@ -1,7 +1,9 @@
 package internal
 
 import (
+	"fmt"
 	"net/http"
+
 	"golang.org/x/net/html"
 )
 
@@ -32,11 +34,13 @@ func GetPageURLs(page *html.Node) []string {
 	return urls
 }
 
-func ScrapePage(pageURL string) (foundURLs []string, err error) {
+func ScrapePage(pageURL string, previousPage string) (foundURLs []string, err error) {
 	page, err := GetPageHTML(pageURL)
 	if err != nil {
 		return
 	}
+
+	fmt.Printf("Scraping %s\n", pageURL)
 
 	currentURLs := GetPageURLs(page)
 
@@ -44,10 +48,13 @@ func ScrapePage(pageURL string) (foundURLs []string, err error) {
 	for _, url := range currentURLs {
 		foundURLs = append(foundURLs, url)
 
-		// We should probably not ignore the error, but... not sure what to do
-		// if it fails so...
-		innerURLs, _ := ScrapePage(url)
-		foundURLs = append(foundURLs, innerURLs...)
+		// This is to prevent us from getting into a loop
+		if url != previousPage && url != pageURL {
+			// We should probably not ignore the error, but... not sure what to do
+			// if it fails so...
+			innerURLs, _ := ScrapePage(url, pageURL)
+			foundURLs = append(foundURLs, innerURLs...)
+		}
 	}
 
 	return 

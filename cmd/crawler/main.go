@@ -17,7 +17,7 @@ func main() {
 
 	seedList := string(seedListBytes)
 	for seed := range strings.Lines(seedList) {
-		urls, err := internal.ScrapePage(strings.TrimSpace(seed))
+		urls, err := internal.ScrapePage(strings.TrimSpace(seed), "")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[ERROR]: %v\n", err)
 		}
