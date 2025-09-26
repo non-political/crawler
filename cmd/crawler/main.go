@@ -1,11 +1,11 @@
 package main
 
-import ( 
-	"os"
+import (
 	"fmt"
+	"os"
 	"strings"
 
-	"github.com/non-political/crawler/internal" 
+	"github.com/non-political/crawler/internal"
 )
 
 func main() {
@@ -15,15 +15,14 @@ func main() {
 		os.Exit(-1)
 	}
 
+	foundPages := make(chan string, 10)
+
 	seedList := string(seedListBytes)
 	for seed := range strings.Lines(seedList) {
-		urls, err := internal.ScrapePage(strings.TrimSpace(seed), "")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "[ERROR]: %v\n", err)
-		}
+		go internal.ScrapePage(strings.TrimSpace(seed), []string{seed}, foundPages)
+	}
 
-		for _, url := range urls {
-			fmt.Printf("Found: %s\n", url)
-		}
+	for url := range foundPages {
+		fmt.Printf("Found: %s\n", url)
 	}
 }

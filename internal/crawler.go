@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"fmt"
 	"net/http"
+	"slices"
 
 	"golang.org/x/net/html"
 )
@@ -34,28 +34,23 @@ func GetPageURLs(page *html.Node) []string {
 	return urls
 }
 
-func ScrapePage(pageURL string, previousPage string) (foundURLs []string, err error) {
+func ScrapePage(pageURL string, visitedPages []string, foundChannel chan string) {
 	page, err := GetPageHTML(pageURL)
 	if err != nil {
 		return
 	}
 
-	fmt.Printf("Scraping %s\n", pageURL)
-
+	// Ensure that the page is actually a page before we say we found it
+	foundChannel <- pageURL
 	currentURLs := GetPageURLs(page)
 
 	// Also, right now the scraping is done recursively which may cause some problems...
 	for _, url := range currentURLs {
-		foundURLs = append(foundURLs, url)
-
 		// This is to prevent us from getting into a loop
-		if url != previousPage && url != pageURL {
-			// We should probably not ignore the error, but... not sure what to do
-			// if it fails so...
-			innerURLs, _ := ScrapePage(url, pageURL)
-			foundURLs = append(foundURLs, innerURLs...)
+		if slices.Contains(visitedPages, url) {
+			continue
 		}
-	}
 
-	return 
+		go ScrapePage(url, append(visitedPages, pageURL), foundChannel)
+	}
 }
