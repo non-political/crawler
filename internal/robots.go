@@ -71,7 +71,6 @@ func ParseRobotTxt(reader io.Reader) (rules RobotRules, err error) {
 				rules.RuleBlocks = append(rules.RuleBlocks, currentBlock)
 			}
 
-			rules.RuleBlocks = append(rules.RuleBlocks, currentBlock)
 			currentBlock = RobotRuleBlock{}
 			continue
 		}
@@ -97,6 +96,10 @@ func ParseRobotTxt(reader io.Reader) (rules RobotRules, err error) {
 		}
 
 		// When we run into an unknown key we just ignore it lol
+	}
+
+	if !currentBlock.IsEmpty() {
+		rules.RuleBlocks = append(rules.RuleBlocks, currentBlock)
 	}
 
 	return
