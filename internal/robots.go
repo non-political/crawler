@@ -47,6 +47,7 @@ func ParseRobotTxt(reader io.Reader) (rules RobotRules, err error) {
 				rules.RuleBlocks = append(rules.RuleBlocks, currentBlock)
 			} 
 
+			rules.RuleBlocks = append(rules.RuleBlocks, currentBlock)
 			currentBlock = RobotRuleBlock{}
 			continue
 		}
@@ -57,7 +58,21 @@ func ParseRobotTxt(reader io.Reader) (rules RobotRules, err error) {
 		lineParts := strings.Split(line, ": ")
 		if len(lineParts) != 2 {
 			err = &RobotSyntaxError{"Unexpected ':' right here."}
+			return
 		}
+
+		// Pretty sure the key is case insensitive, so we can just do this.
+		key := strings.ToLower(lineParts[0])
+		value := lineParts[1]
+
+		switch key {
+		case "user-agent":
+			currentBlock.UserAgents = append(currentBlock.UserAgents, value)
+		case "disallow":
+			currentBlock.DisallowedURLs = append(currentBlock.DisallowedURLs, value)
+		}
+		
+		// When we run into an unknown key we just ignore it lol
 	}
 
 	return
