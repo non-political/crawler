@@ -27,6 +27,30 @@ func (block *RobotRuleBlock) IsEmpty() bool {
 	return len(block.DisallowedURLs) == 0
 }
 
+// This is only for testing purposes only - I don't see when we would
+// ever use this in any actual code lol.
+func (rules *RobotRules) IsEqual(b *RobotRules) bool {
+	for i, block := range rules.RuleBlocks {
+		for j, agent := range block.UserAgents {
+			if b.RuleBlocks[i].UserAgents[j] != agent {
+				return false
+			}
+		}
+
+		for j, disallow := range block.DisallowedURLs {
+			if b.RuleBlocks[i].DisallowedURLs[j] != disallow {
+				return false
+			}
+		}
+	}
+
+	if rules.Sitemap != b.Sitemap {
+		return false
+	}
+
+	return true
+}
+
 func ParseRobotTxt(reader io.Reader) (rules RobotRules, err error) {
 	robotsFile, err := io.ReadAll(reader)
 	if err != nil {
