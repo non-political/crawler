@@ -104,3 +104,29 @@ func ParseRobotTxt(reader io.Reader) (rules RobotRules, err error) {
 
 	return
 }
+
+// Since it seems like stripping the prefix and stuff would be too difficult,
+// I decided that you are going to do that manually before calling this function.
+// Therefore, do not worry if you don't end up dying from this shit hole
+func MatchURLRule(url string, rule string) bool {
+	urlParts := strings.Split(url, "/")
+	ruleParts := strings.Split(rule, "/")
+
+	// Obviously if they have different parts they won't match.
+	if len(urlParts) != len(ruleParts) {
+		return false
+	}
+
+	for i, urlPart := range(urlParts) {
+		// '*' matches anything
+		if ruleParts[i] == "*" {
+			continue
+		}
+
+		if ruleParts[i] != urlPart {
+			return false
+		}
+	}
+
+	return true
+}
