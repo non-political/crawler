@@ -36,3 +36,21 @@ Disallow: /no/`
 		t.Errorf("Expected:\n%v\n\nGot:\n%v\n", expected, obtained)
 	}
 }
+
+func TestURLMatching(t *testing.T) {
+	if !MatchURLRule("/hello/world", "/*/world") {
+		t.Errorf("First assertion failed!")
+	}
+
+	if MatchURLRule("/hello/world", "/goodbye/world") {
+		t.Errorf("Second assertion failed!")
+	}
+
+	if !MatchURLRule("/hello/world", "/hello/world") {
+		t.Errorf("Third assertion failed!")
+	}
+
+	if !MatchURLRule("/hello/world", "/hello/*") {
+		t.Errorf("Fourth assertion failed!")
+	}
+}
