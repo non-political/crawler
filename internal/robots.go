@@ -6,13 +6,13 @@ import (
 )
 
 type RobotRuleBlock struct {
-	UserAgents []string
+	UserAgents     []string
 	DisallowedURLs []string
 }
 
 type RobotRules struct {
 	RuleBlocks []RobotRuleBlock
-	Sitemap string
+	Sitemap    string
 }
 
 type RobotSyntaxError struct {
@@ -69,7 +69,7 @@ func ParseRobotTxt(reader io.Reader) (rules RobotRules, err error) {
 		if strings.TrimSpace(line) == "" {
 			if !currentBlock.IsEmpty() {
 				rules.RuleBlocks = append(rules.RuleBlocks, currentBlock)
-			} 
+			}
 
 			rules.RuleBlocks = append(rules.RuleBlocks, currentBlock)
 			currentBlock = RobotRuleBlock{}
@@ -87,7 +87,7 @@ func ParseRobotTxt(reader io.Reader) (rules RobotRules, err error) {
 
 		// Pretty sure the key is case insensitive, so we can just do this.
 		key := strings.ToLower(lineParts[0])
-		value := lineParts[1]
+		value := strings.TrimSpace(lineParts[1])
 
 		switch key {
 		case "user-agent":
@@ -95,7 +95,7 @@ func ParseRobotTxt(reader io.Reader) (rules RobotRules, err error) {
 		case "disallow":
 			currentBlock.DisallowedURLs = append(currentBlock.DisallowedURLs, value)
 		}
-		
+
 		// When we run into an unknown key we just ignore it lol
 	}
 
