@@ -19,7 +19,7 @@ func main() {
 
 	seedList := string(seedListBytes)
 	for seed := range strings.Lines(seedList) {
-		go internal.ScrapePage(strings.TrimSpace(seed), []string{seed}, foundPages)
+		go internal.ScrapePage(strings.TrimSpace(seed), foundPages)
 	}
 
 	for url := range foundPages {

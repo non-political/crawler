@@ -2,7 +2,6 @@ package internal
 
 import (
 	"net/http"
-	"slices"
 
 	"golang.org/x/net/html"
 )
@@ -15,7 +14,7 @@ func GetPageHTML(url string) (pageDom *html.Node, errReturned error) {
 	}
 
 	defer response.Body.Close()
-	
+
 	pageDom, errReturned = html.Parse(response.Body)
 	return
 }
@@ -34,7 +33,7 @@ func GetPageURLs(page *html.Node) []string {
 	return urls
 }
 
-func ScrapePage(pageURL string, visitedPages []string, foundChannel chan string) {
+func ScrapePage(pageURL string, foundChannel chan string) {
 	page, err := GetPageHTML(pageURL)
 	if err != nil {
 		return
@@ -47,10 +46,11 @@ func ScrapePage(pageURL string, visitedPages []string, foundChannel chan string)
 	// Also, right now the scraping is done recursively which may cause some problems...
 	for _, url := range currentURLs {
 		// This is to prevent us from getting into a loop
-		if slices.Contains(visitedPages, url) {
+		if Set().Contains(url) {
 			continue
 		}
 
-		go ScrapePage(url, append(visitedPages, pageURL), foundChannel)
+		Set().Add(url)
+		go ScrapePage(url, foundChannel)
 	}
 }
