@@ -1,16 +1,22 @@
 package internal
 
 import (
+	"context"
 	"net/http"
 
 	"golang.org/x/net/html"
 )
 
-func GetPageHTML(url string) (pageDom *html.Node, errReturned error) {
-	response, err := http.Get(url)
+func GetPageHTML(ctx context.Context, url string) (pageDom *html.Node, errReturned error) {
+	request, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		errReturned = err
 		return
+	}
+
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return nil, err
 	}
 
 	defer response.Body.Close()
