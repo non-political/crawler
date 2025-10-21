@@ -2,7 +2,9 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"sync"
 
 	"golang.org/x/net/html"
 )
@@ -39,24 +41,46 @@ func GetPageURLs(page *html.Node) []string {
 	return urls
 }
 
-func ScrapePage(pageURL string, foundChannel chan string) {
-	page, err := GetPageHTML(pageURL)
-	if err != nil {
-		return
-	}
+func ScrapePage(id int, ctx context.Context, scrapeQueue chan string, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Printf("worker %d: stopping\n", id)
+			return
+		case currentURL, ok := <-scrapeQueue:
+			// channel closed
+			if !ok {
+				return
+			}
 
-	// Ensure that the page is actually a page before we say we found it
-	foundChannel <- pageURL
-	currentURLs := GetPageURLs(page)
+			// check that the url is valid and the page can be accessed
+			page, err := GetPageHTML(ctx, currentURL)
+			if err != nil {
+				continue
+			}
 
-	// Also, right now the scraping is done recursively which may cause some problems...
-	for _, url := range currentURLs {
-		// This is to prevent us from getting into a loop
-		if Set().Contains(url) {
-			continue
+			fmt.Printf("worker %d: scraping %s\n", id, currentURL)
+
+			// URLs on the current page
+			nextURLs := GetPageURLs(page)
+
+			for _, nextURL := range nextURLs {
+				// This is to prevent us from getting into a loop
+				if Set().Contains(nextURL) {
+					continue
+				}
+				fmt.Printf("worker %d: found %s\n", id, nextURL)
+
+				Set().Add(nextURL)
+
+				select {
+				case scrapeQueue <- nextURL:
+				case <-ctx.Done():
+					return
+				default:
+				}
+			}
 		}
-
-		Set().Add(url)
-		go ScrapePage(url, foundChannel)
 	}
 }
