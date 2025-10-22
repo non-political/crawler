@@ -51,6 +51,7 @@ func ScrapePage(id int, ctx context.Context, scrapeQueue chan string, wg *sync.W
 		case currentURL, ok := <-scrapeQueue:
 			// channel closed
 			if !ok {
+				fmt.Printf("worker %d: stopping (channel closed)\n", id)
 				return
 			}
 
@@ -75,8 +76,9 @@ func ScrapePage(id int, ctx context.Context, scrapeQueue chan string, wg *sync.W
 				Set().Add(nextURL)
 
 				select {
-				case scrapeQueue <- nextURL:
+				case scrapeQueue <- nextURL: // send if queue isn't full, discarded if queue is full
 				case <-ctx.Done():
+					fmt.Printf("worker %d: stopping\n", id)
 					return
 				default:
 				}
