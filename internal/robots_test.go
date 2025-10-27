@@ -62,4 +62,14 @@ func TestURLMatching(t *testing.T) {
 	if !MatchURLRule("/hello/world", rule) {
 		t.Errorf("Fourth assertion failed!")
 	}
+
+	rule, _ = regexp.Compile("/")
+	if !MatchURLRule("/hello/world", rule) {
+		t.Errorf("Fourth assertion failed!")
+	}
+
+	rule, _ = regexp.Compile("/hello/")
+	if !MatchURLRule("/hello/world", rule) {
+		t.Errorf("Fourth assertion failed!")
+	}
 }
