@@ -1,8 +1,9 @@
 package internal
 
 import (
-	"testing"
+	"regexp"
 	"strings"
+	"testing"
 )
 
 func TestRobotParsing(t *testing.T) {
@@ -18,15 +19,19 @@ Disallow: /no/`
 		t.Fatalf("It encountered an error while parsing: %v\n", err)
 	}
 
+	yesNoRule, _ := regexp.Compile("/yes/no")
+	bozoRule, _ := regexp.Compile("/bozo")
+	noRule, _ := regexp.Compile("/no/")
+
 	expected := RobotRules {
 		RuleBlocks: []RobotRuleBlock{
 			{
 				UserAgents: []string{"Neng Li"},
-				DisallowedURLs: []string{"/yes/no", "/bozo"},
+				DisallowedURLs: []*regexp.Regexp{yesNoRule, bozoRule},
 			},
 			{
 				UserAgents: []string{"Indeed"},
-				DisallowedURLs: []string{"/no/"},
+				DisallowedURLs: []*regexp.Regexp{noRule},
 			},
 		},
 		Sitemap: "",
@@ -38,19 +43,23 @@ Disallow: /no/`
 }
 
 func TestURLMatching(t *testing.T) {
-	if !MatchURLRule("/hello/world", "/*/world") {
+	rule, _ := regexp.Compile("/*/world")
+	if !MatchURLRule("/hello/world", rule) {
 		t.Errorf("First assertion failed!")
 	}
 
-	if MatchURLRule("/hello/world", "/goodbye/world") {
+	rule, _ = regexp.Compile("/goodbye/world")
+	if MatchURLRule("/hello/world", rule) {
 		t.Errorf("Second assertion failed!")
 	}
 
-	if !MatchURLRule("/hello/world", "/hello/world") {
+	rule, _ = regexp.Compile("/hello/world")
+	if !MatchURLRule("/hello/world", rule) {
 		t.Errorf("Third assertion failed!")
 	}
 
-	if !MatchURLRule("/hello/world", "/hello/*") {
+	rule, _ = regexp.Compile("/hello/*")
+	if !MatchURLRule("/hello/world", rule) {
 		t.Errorf("Fourth assertion failed!")
 	}
 }

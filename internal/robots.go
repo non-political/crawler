@@ -3,11 +3,12 @@ package internal
 import (
 	"io"
 	"strings"
+	"regexp"
 )
 
 type RobotRuleBlock struct {
 	UserAgents     []string
-	DisallowedURLs []string
+	DisallowedURLs []*regexp.Regexp
 }
 
 type RobotRules struct {
@@ -38,7 +39,7 @@ func (rules *RobotRules) IsEqual(b *RobotRules) bool {
 		}
 
 		for j, disallow := range block.DisallowedURLs {
-			if b.RuleBlocks[i].DisallowedURLs[j] != disallow {
+			if b.RuleBlocks[i].DisallowedURLs[j].String() != disallow.String() {
 				return false
 			}
 		}
@@ -92,7 +93,12 @@ func ParseRobotTxt(reader io.Reader) (rules RobotRules, err error) {
 		case "user-agent":
 			currentBlock.UserAgents = append(currentBlock.UserAgents, value)
 		case "disallow":
-			currentBlock.DisallowedURLs = append(currentBlock.DisallowedURLs, value)
+			regex, err := regexp.Compile(value)
+			if err != nil {
+				err = &RobotSyntaxError{"Invalid regex"}
+				return RobotRules {}, err
+			}
+			currentBlock.DisallowedURLs = append(currentBlock.DisallowedURLs, regex)
 		}
 
 		// When we run into an unknown key we just ignore it lol
@@ -108,25 +114,11 @@ func ParseRobotTxt(reader io.Reader) (rules RobotRules, err error) {
 // Since it seems like stripping the prefix and stuff would be too difficult,
 // I decided that you are going to do that manually before calling this function.
 // Therefore, do not worry if you don't end up dying from this shit hole
-func MatchURLRule(url string, rule string) bool {
-	urlParts := strings.Split(url, "/")
-	ruleParts := strings.Split(rule, "/")
-
-	// Obviously if they have different parts they won't match.
-	if len(urlParts) != len(ruleParts) {
-		return false
+func MatchURLRule(url string, rule *regexp.Regexp) bool {
+	// This covers specifically one of the cases
+	if strings.HasSuffix(rule.String(), "/") {
+		return strings.HasPrefix(url, rule.String())
 	}
 
-	for i, urlPart := range(urlParts) {
-		// '*' matches anything
-		if ruleParts[i] == "*" {
-			continue
-		}
-
-		if ruleParts[i] != urlPart {
-			return false
-		}
-	}
-
-	return true
+	return rule.MatchString(url)
 }
