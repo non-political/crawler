@@ -2,8 +2,8 @@ package internal
 
 import (
 	"io"
-	"strings"
 	"regexp"
+	"strings"
 )
 
 type RobotRuleBlock struct {
@@ -96,7 +96,7 @@ func ParseRobotTxt(reader io.Reader) (rules RobotRules, err error) {
 			regex, err := regexp.Compile(value)
 			if err != nil {
 				err = &RobotSyntaxError{"Invalid regex"}
-				return RobotRules {}, err
+				return RobotRules{}, err
 			}
 			currentBlock.DisallowedURLs = append(currentBlock.DisallowedURLs, regex)
 		}

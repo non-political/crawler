@@ -11,7 +11,10 @@ func TestRobotParsing(t *testing.T) {
 Disallow: /yes/no
 Disallow: /bozo
 
+# Comment
 User-agent: Indeed
+User-agent: Interesting
+# Comment
 Disallow: /no/`
 
 	obtained, err := ParseRobotTxt(strings.NewReader(input))
@@ -23,14 +26,14 @@ Disallow: /no/`
 	bozoRule, _ := regexp.Compile("/bozo")
 	noRule, _ := regexp.Compile("/no/")
 
-	expected := RobotRules {
+	expected := RobotRules{
 		RuleBlocks: []RobotRuleBlock{
 			{
-				UserAgents: []string{"Neng Li"},
+				UserAgents:     []string{"Neng Li"},
 				DisallowedURLs: []*regexp.Regexp{yesNoRule, bozoRule},
 			},
 			{
-				UserAgents: []string{"Indeed"},
+				UserAgents:     []string{"Indeed", "Interesting"},
 				DisallowedURLs: []*regexp.Regexp{noRule},
 			},
 		},
@@ -43,33 +46,36 @@ Disallow: /no/`
 }
 
 func TestURLMatching(t *testing.T) {
-	rule, _ := regexp.Compile("/*/world")
-	if !MatchURLRule("/hello/world", rule) {
-		t.Errorf("First assertion failed!")
+	tests := map[int]struct {
+		Rule     string
+		URL      string
+		Expected bool
+	}{
+		1:  {Rule: "/*/world", URL: "/hello/world", Expected: true},
+		2:  {Rule: "/goodbye/world", URL: "/hello/world", Expected: false},
+		3:  {Rule: "/hello/world", URL: "/hello/world", Expected: true},
+		4:  {Rule: "/hello/*", URL: "/hello/world", Expected: true},
+		5:  {Rule: "/", URL: "/hello/world", Expected: true},
+		6:  {Rule: "/hello/", URL: "/hello/world", Expected: true},
+		7:  {Rule: "/Hello/World", URL: "/hello/world", Expected: false}, // case sensitivity
+		8:  {Rule: "/hello/$", URL: "/hello/world/hi", Expected: false},  // anchored end
+		9:  {Rule: "/hello$", URL: "/hello", Expected: true},             // end anchor match
+		10: {Rule: "/*.php$", URL: "/index.php", Expected: true},
+		11: {Rule: "/*.php$", URL: "/index.php?parameter", Expected: false},
+		12: {Rule: "/$", URL: "/", Expected: true},
+		13: {Rule: "/$", URL: "/hello", Expected: false},
 	}
 
-	rule, _ = regexp.Compile("/goodbye/world")
-	if MatchURLRule("/hello/world", rule) {
-		t.Errorf("Second assertion failed!")
-	}
-
-	rule, _ = regexp.Compile("/hello/world")
-	if !MatchURLRule("/hello/world", rule) {
-		t.Errorf("Third assertion failed!")
-	}
-
-	rule, _ = regexp.Compile("/hello/*")
-	if !MatchURLRule("/hello/world", rule) {
-		t.Errorf("Fourth assertion failed!")
-	}
-
-	rule, _ = regexp.Compile("/")
-	if !MatchURLRule("/hello/world", rule) {
-		t.Errorf("Fourth assertion failed!")
-	}
-
-	rule, _ = regexp.Compile("/hello/")
-	if !MatchURLRule("/hello/world", rule) {
-		t.Errorf("Fourth assertion failed!")
+	for id, test := range tests {
+		rule, err := regexp.Compile(test.Rule)
+		if err != nil {
+			t.Errorf("Test %d: failed to compile regex %q: %v", id, test.Rule, err)
+			continue
+		}
+		result := MatchURLRule(test.URL, rule)
+		if result != test.Expected {
+			t.Errorf("Test %d: rule=%q, url=%q, expected %t, got %t",
+				id, test.Rule, test.URL, test.Expected, result)
+		}
 	}
 }
